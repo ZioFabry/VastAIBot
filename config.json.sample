@@ -1,0 +1,28 @@
+{
+    "Account1": {
+        "api_key": "<account1_api_key>",
+        "machine_ids": [
+            <account1_machine_id1>,
+            <account1_machine_id2>,
+            <account1_machine_id3>,
+            <account1_machine_id4>
+        ],
+        "notify": [
+            <account2_notify_id1>,
+            <account2_notify_id2>
+        ]
+    },
+    "Account2": {
+        "api_key": "<account2_api_key>",
+        "machine_ids": [
+            <account2_machine_id1>,
+            <account2_machine_id2>,
+            <account2_machine_id3>,
+            <account2_machine_id4>
+        ],
+        "notify": [
+            <account2_notify_id1>,
+            <account2_notify_id2>
+        ]
+    }
+}
