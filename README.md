@@ -73,7 +73,7 @@ Before running VastAIBot, ensure you have the following:
 
 You can run the Python script directly:
 ```bash
-python3 VastAIBot.py
+python3 VastAIBot.py 2>&1 | tee -a log/VastAIBot.log
 ```
 
 ### Logs
