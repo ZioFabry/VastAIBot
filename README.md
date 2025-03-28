@@ -118,7 +118,18 @@ Logs are stored in the log directory. The main log file is VastAIBot.log.
 
 - Logs are stored in the log directory.
 - The main log file is VastAIBot.log.
-- Rember to configure logrotate to compress and store as `.gz` files.
+- Rember to configure logrotate to rotate, compress and store as `.gz` files, for example you can create the file /etc/logrotate.d/VastAIBot.log with:
+  ```
+  # adjust the path if needed
+  ~/VastAIBot/log/*.log {
+     daily
+     rotate 30
+     compress
+     notifempty
+     missingok
+     copytruncate
+  }
+  ```
 
 ## Troubleshooting
 
