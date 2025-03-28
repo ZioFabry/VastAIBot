@@ -151,7 +151,7 @@ async def monitor_servers() -> None:
                 server_ids = account_data["machine_ids"]
 
                 user = await get_current_user(api_key, session)
-                balance = user.get("balance", 0)
+                balance: float = user.get("balance", 0)
 
                 servers = await get_server_status(api_key, session)
 
@@ -160,25 +160,26 @@ async def monitor_servers() -> None:
                 for server in servers:
                     server_id = str(server.get("id"))
                     if all_server or int(server_id) in server_ids:
-                        listed = server.get("listed", 0)
-                        running = server.get("current_rentals_running", 0)
-                        rented = running > 0
-                        reliability = server.get("reliability2", 0) or 0.0
-                        total_gpus = server.get("num_gpus", 0)
-                        earn_hour = server.get("earn_hour", 0) or 0.0
-                        earn_day = server.get("earn_day", 0) or 0.0
+                        listed: bool = server.get("listed", 0) or False
+                        running: int = server.get("current_rentals_running", 0)
+                        rented: bool = running > 0
+                        reliability: float = server.get("reliability2", 0) or 0.0
+                        total_gpus: int = server.get("num_gpus", 0)
+                        earn_hour: float = server.get("earn_hour", 0) or 0.0
+                        earn_day: float = server.get("earn_day", 0) or 0.0
 
                         price: float = 0.0
                         minbid: float = 0.0
                         hdprice: float = 0.0
                         mingpu: int = 0
 
+                        minbid: float = server.get("min_bid_price", 0) or 0.0
+
                         if listed:
                             rented_gpus = server.get("gpu_occupancy", "").count(
                                 "D"
                             ) + server.get("gpu_occupancy", "").count("I")
                             price = server.get("listed_gpu_cost", 0) or 0.0
-                            minbid = server.get("min_bid_price", 0) or 0.0
                             hdprice = server.get("listed_storage_cost", 0) or 0.0
                             mingpu = server.get("listed_min_gpu_count", 0) or 0
                             price_info = f"💵{price:.2f}/{minbid:.2f} 💾{hdprice:.2f}"
