@@ -164,45 +164,53 @@ async def monitor_servers() -> None:
                         running: int = server.get("current_rentals_running", 0)
                         rented: bool = running > 0
                         reliability: float = server.get("reliability2", 0) or 0.0
-                        total_gpus: int = server.get("num_gpus", 0)
+                        num_gpus: int = server.get("num_gpus", 0)
                         earn_hour: float = server.get("earn_hour", 0) or 0.0
                         earn_day: float = server.get("earn_day", 0) or 0.0
+                        gpu_occupancy: str = server.get("gpu_occupancy", "") or ""
+                        listed_gpu_cost: float = 0.0
+                        min_bid_price: float = 0.0
+                        listed_storage_cost: float = 0.0
+                        listed_min_gpu_count: int = 0
 
-                        price: float = 0.0
-                        minbid: float = 0.0
-                        hdprice: float = 0.0
-                        mingpu: int = 0
-
-                        minbid: float = server.get("min_bid_price", 0) or 0.0
+                        min_bid_price: float = server.get("min_bid_price", 0) or 0.0
 
                         if listed:
-                            rented_gpus = server.get("gpu_occupancy", "").count(
+                            rented_gpus = gpu_occupancy.count(
                                 "D"
-                            ) + server.get("gpu_occupancy", "").count("I")
-                            price = server.get("listed_gpu_cost", 0) or 0.0
-                            hdprice = server.get("listed_storage_cost", 0) or 0.0
-                            mingpu = server.get("listed_min_gpu_count", 0) or 0
-                            price_info = f"💵{price:.2f}/{minbid:.2f} 💾{hdprice:.2f}"
+                            ) + gpu_occupancy.count("I")
+                            listed_gpu_cost = server.get("listed_gpu_cost", 0) or 0.0
+                            listed_storage_cost = (
+                                server.get("listed_storage_cost", 0) or 0.0
+                            )
+                            listed_min_gpu_count = (
+                                server.get("listed_min_gpu_count", 0) or 0
+                            )
+                            price_info = f"💵{listed_gpu_cost:.2f}/{min_bid_price:.2f} 💾{listed_storage_cost:.2f}"
                         else:
                             rented_gpus = running
                             price_info = "❌ NotList ❌"
 
                         status_str = "✅Rent" if rented else "❌Free"
-                        gpu_status = f"🎞{rented_gpus}/{total_gpus}"
+                        gpu_status = f"🎞{rented_gpus}/{num_gpus}"
                         earning_info = f"💰{earn_hour:.2f}$ / {earn_day:.2f}$"
                         reliability_info = f"🎯{reliability*100:.2f}%"
-                        server_line = f"🖥️{server_id} {status_str} {gpu_status}»{mingpu} {price_info} {reliability_info}\n"
+                        server_line = f"🖥️{server_id} {status_str} {gpu_status} » {listed_min_gpu_count} {price_info} {reliability_info}\n"
 
                         old_data = previous_status.get(server_id)
                         if old_data is not None:
-                            p_price = old_data.get("price") or 0.0
-                            p_hdprice = old_data.get("hdprice") or 0.0
+                            p_listed_gpu_cost = old_data.get("listed_gpu_cost") or 0.0
+                            p_listed_storage_cost = (
+                                old_data.get("listed_storage_cost") or 0.0
+                            )
                             p_rented = old_data.get("rented") or False
                             p_rented_gpus = old_data.get("rented_gpus") or 0
-                            p_minbid = old_data.get("minbid") or 0.0
-                            p_mingpu = old_data.get("mingpu") or 0.0
+                            p_min_bid_price = old_data.get("min_bid_price") or 0.0
+                            p_listed_min_gpu_count = (
+                                old_data.get("listed_min_gpu_count") or 0.0
+                            )
 
-                            p_gpu_status = f"🎞{p_rented_gpus}/{total_gpus}"
+                            p_gpu_status = f"🎞{p_rented_gpus}/{num_gpus}"
 
                             if p_rented != rented or p_rented_gpus != rented_gpus:
                                 changes_detected = True
@@ -210,31 +218,31 @@ async def monitor_servers() -> None:
                                     "🚀" if p_rented_gpus < rented_gpus else "🛬"
                                 )
                                 changes_lines.append(
-                                    f"{ico_status} {server_id} {status_str} {p_gpu_status} -> {gpu_status}\n"
+                                    f"{ico_status} {server_id} {status_str} {p_gpu_status} » {gpu_status} » {(gpu_occupancy.replace(' ', ''))}\n"
                                 )
 
-                            if p_price != price:
+                            if p_listed_gpu_cost != listed_gpu_cost:
                                 changes_detected = True
                                 changes_lines.append(
-                                    f"⚠️ {server_id} 🎞 price change, {p_price:.4f}$ -> {price:.4f}$\n"
+                                    f"⚠️ {server_id} 🎞 price change, {p_listed_gpu_cost:.4f}$ » {listed_gpu_cost:.4f}$\n"
                                 )
 
-                            if p_hdprice != hdprice:
+                            if p_listed_storage_cost != listed_storage_cost:
                                 changes_detected = True
                                 changes_lines.append(
-                                    f"⚠️ {server_id} 💾 price change, {p_hdprice:.4f}$ -> {hdprice:.4f}$\n"
+                                    f"⚠️ {server_id} 💾 price change, {p_listed_storage_cost:.4f}$ » {listed_storage_cost:.4f}$\n"
                                 )
 
-                            if p_mingpu != mingpu:
+                            if p_listed_min_gpu_count != listed_min_gpu_count:
                                 changes_detected = True
                                 changes_lines.append(
-                                    f"⚠️ {server_id} #️⃣ min gpu change, {p_mingpu} -> {mingpu}\n"
+                                    f"⚠️ {server_id} #️⃣ min gpu change, {p_listed_min_gpu_count} » {listed_min_gpu_count}\n"
                                 )
 
-                            if p_minbid != minbid:
+                            if p_min_bid_price != min_bid_price:
                                 changes_detected = True
                                 changes_lines.append(
-                                    f"⚠️ {server_id} #️⃣ min bid change, {p_minbid} -> {minbid}\n"
+                                    f"⚠️ {server_id} #️⃣ min bid change, {p_min_bid_price} » {min_bid_price}\n"
                                 )
                         else:
                             changes_detected = True
@@ -242,10 +250,10 @@ async def monitor_servers() -> None:
                         previous_status[server_id] = {
                             "rented": rented,
                             "rented_gpus": rented_gpus,
-                            "price": price,
-                            "hdprice": hdprice,
-                            "minbid": minbid,
-                            "mingpu": mingpu,
+                            "listed_gpu_cost": listed_gpu_cost,
+                            "listed_storage_cost": listed_storage_cost,
+                            "min_bid_price": min_bid_price,
+                            "listed_min_gpu_count": listed_min_gpu_count,
                             "earn_hour": earn_hour,
                             "earn_day": earn_day,
                             "reliability": reliability,
