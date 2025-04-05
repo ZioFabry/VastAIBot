@@ -122,7 +122,24 @@ async def get_current_user(
         logging.error(f"Invalid JSON user response: {e}")
         return []
 
+async def get_user_earnings(
+    api_key: str, session: aiohttp.ClientSession
+) -> Dict[str, Any]:
+    await asyncio.sleep(1)
 
+    url = f"{VAST_URL}/user/earnings"
+    headers = {"Authorization": f"Bearer {api_key}"}
+    try:
+        async with session.get(url, headers=headers, timeout=10) as response:
+            response.raise_for_status()
+            return await response.json()
+    except aiohttp.ClientError as e:
+        logging.error(f"Error fetching user earnings: {e}")
+        return []
+    except json.JSONDecodeError as e:
+        logging.error(f"Invalid JSON user earnings response: {e}")
+        return []
+    
 # Main asynchronous function to monitor servers
 async def monitor_servers() -> None:
     """
@@ -156,6 +173,9 @@ async def monitor_servers() -> None:
 
                 user = await get_current_user(api_key, session)
                 balance: float = user.get("balance", 0)
+                
+                earnings = await get_user_earnings(api_key, session)
+                machine_earnings = earnings.get("machine_earnings", 0) or 0.0
 
                 servers = await get_server_status(api_key, session)
 
@@ -282,7 +302,7 @@ async def monitor_servers() -> None:
                 if (first_run or changes_detected) and account_lines:
                     messages.insert(
                         0,
-                        f"👤 {account_name} 💰 {balance:.2f}$\n\n"
+                        f"👤 {account_name} 💰 {balance:.2f}$ 🏦 {machine_earnings:.2f}$\n\n"
                         + "".join(changes_lines)
                         + "".join(account_lines),
                     )
