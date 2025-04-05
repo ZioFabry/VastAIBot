@@ -65,10 +65,11 @@ async def send_telegram_message(
     """
     avoid/allow to send messages to the users during development
     """
-    recipients = set(chat_ids) if chat_ids else set()
-    # recipients = set()
-
-    recipients.add(int(TELEGRAM_CHAT_ID))
+    if chat_ids is None:
+        recipients = set()
+        recipients.add(int(TELEGRAM_CHAT_ID))
+    else:
+        recipients = set(chat_ids)
 
     logging.info(
         f"Sending message to [" + ", ".join(map(str, recipients)) + f"]:\n{message}"
@@ -136,6 +137,9 @@ async def monitor_servers() -> None:
 
     async with aiohttp.ClientSession() as session:
         while not shutdown_event.is_set():
+            vast_accounts = load_json(CONFIG_FILE)
+            previous_status = load_json(STATUS_FILE)
+
             account_items = list(vast_accounts.items())
 
             for index, (account_name, account_data) in enumerate(account_items):
@@ -162,6 +166,7 @@ async def monitor_servers() -> None:
                     if all_server or int(server_id) in server_ids:
                         listed: bool = server.get("listed", 0) or False
                         running: int = server.get("current_rentals_running", 0)
+                        resident: int = server.get("current_rentals_resident", 0)
                         rented: bool = running > 0
                         reliability: float = server.get("reliability2", 0) or 0.0
                         num_gpus: int = server.get("num_gpus", 0)
@@ -172,6 +177,7 @@ async def monitor_servers() -> None:
                         min_bid_price: float = 0.0
                         listed_storage_cost: float = 0.0
                         listed_min_gpu_count: int = 0
+                        num_reports: int = server.get("num_reports", "") or 0
 
                         min_bid_price: float = server.get("min_bid_price", 0) or 0.0
 
@@ -186,16 +192,17 @@ async def monitor_servers() -> None:
                             listed_min_gpu_count = (
                                 server.get("listed_min_gpu_count", 0) or 0
                             )
-                            price_info = f"💵{listed_gpu_cost:.2f}/{min_bid_price:.2f} 💾{listed_storage_cost:.2f}"
+                            price_info = f"💵{listed_gpu_cost:.2f} {min_bid_price:.2f} {listed_storage_cost:.2f}"
                         else:
                             rented_gpus = running
                             price_info = "❌ NotList ❌"
 
-                        status_str = "✅Rent" if rented else "❌Free"
-                        gpu_status = f"🎞{rented_gpus}/{num_gpus}"
-                        earning_info = f"💰{earn_hour:.2f}$ / {earn_day:.2f}$"
+                        status_str = f"✅" if rented else "❌"
+                        gpu_status = f"{rented_gpus}/{num_gpus}"
+                        # earning_info = f"💰{earn_hour:.2f}$ / {earn_day:.2f}$"
                         reliability_info = f"🎯{reliability*100:.2f}%"
-                        server_line = f"🖥️{server_id} {status_str} {gpu_status} » {listed_min_gpu_count} {price_info} {reliability_info}\n"
+                        running_info = (f"👤{running}" if rented else "") + (f"🗄️{resident}" if resident > 0 else "")
+                        server_line = f"🖥️{server_id} {status_str}{gpu_status}«{listed_min_gpu_count} {price_info} {reliability_info} {running_info}\n"
 
                         old_data = previous_status.get(server_id)
                         if old_data is not None:
@@ -209,8 +216,9 @@ async def monitor_servers() -> None:
                             p_listed_min_gpu_count = (
                                 old_data.get("listed_min_gpu_count") or 0.0
                             )
+                            p_num_reports = old_data.get("num_reports") or 0
 
-                            p_gpu_status = f"🎞{p_rented_gpus}/{num_gpus}"
+                            p_gpu_status = f"{p_rented_gpus}/{num_gpus}"
 
                             if p_rented != rented or p_rented_gpus != rented_gpus:
                                 changes_detected = True
@@ -218,32 +226,38 @@ async def monitor_servers() -> None:
                                     "🚀" if p_rented_gpus < rented_gpus else "🛬"
                                 )
                                 changes_lines.append(
-                                    f"{ico_status} {server_id} {status_str} {p_gpu_status} » {gpu_status} » {(gpu_occupancy.replace(' ', ''))}\n"
+                                    f"{ico_status}{server_id} {status_str} {p_gpu_status} » {rented_gpus}/{num_gpus} = {(gpu_occupancy.replace(' ', ''))}\n"
                                 )
 
                             if p_listed_gpu_cost != listed_gpu_cost:
                                 changes_detected = True
                                 changes_lines.append(
-                                    f"⚠️ {server_id} 🎞 price change, {p_listed_gpu_cost:.4f}$ » {listed_gpu_cost:.4f}$\n"
+                                    f"⚠️{server_id} 💰 price change, {p_listed_gpu_cost:.4f}$ » {listed_gpu_cost:.4f}$\n"
                                 )
 
                             if p_listed_storage_cost != listed_storage_cost:
                                 changes_detected = True
                                 changes_lines.append(
-                                    f"⚠️ {server_id} 💾 price change, {p_listed_storage_cost:.4f}$ » {listed_storage_cost:.4f}$\n"
+                                    f"⚠️{server_id} 💾 price change, {p_listed_storage_cost:.4f}$ » {listed_storage_cost:.4f}$\n"
                                 )
 
                             if p_listed_min_gpu_count != listed_min_gpu_count:
                                 changes_detected = True
                                 changes_lines.append(
-                                    f"⚠️ {server_id} #️⃣ min gpu change, {p_listed_min_gpu_count} » {listed_min_gpu_count}\n"
+                                    f"⚠️{server_id} 🎞 min gpu change, {p_listed_min_gpu_count} » {listed_min_gpu_count}\n"
                                 )
 
                             if p_min_bid_price != min_bid_price:
                                 changes_detected = True
                                 changes_lines.append(
-                                    f"⚠️ {server_id} #️⃣ min bid change, {p_min_bid_price} » {min_bid_price}\n"
+                                    f"⚠️{server_id} 🪫 min bid change, {p_min_bid_price} » {min_bid_price}\n"
                                 )
+                            if p_num_reports != num_reports:
+                                changes_detected = True
+                                changes_lines.append(
+                                    f"⚠️{server_id} 🚨 num reports change, {p_num_reports} » {num_reports}\n"
+                                )
+
                         else:
                             changes_detected = True
 
@@ -257,6 +271,8 @@ async def monitor_servers() -> None:
                             "earn_hour": earn_hour,
                             "earn_day": earn_day,
                             "reliability": reliability,
+                            "num_reports": num_reports,
+                            "gpu_occupancy": gpu_occupancy,
                         }
                         account_lines.append(server_line)
 
@@ -329,7 +345,7 @@ async def main() -> None:
                 continue
 
         # Save the current server status to the status file.
-        save_json(STATUS_FILE, previous_status)
+        # save_json(STATUS_FILE, previous_status)
 
     # Send a Telegram message indicating the bot is offline.
     await send_telegram_message("🔴 VastAIBot **Offline**")
