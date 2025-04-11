@@ -141,9 +141,11 @@ class VastAIBot:
 
         user = await self.get_current_user(api_key, session)
         balance: float = user.get("balance", 0)
+        await asyncio.sleep(1)  # try to prevent too many requests response
 
         earnings = await self.get_user_earnings(api_key, session)
         machine_earnings = earnings.get("machine_earnings", 0) or 0.0
+        await asyncio.sleep(1)  # try to prevent too many requests response
 
         servers = await self.get_server_status(api_key, session)
 
@@ -282,6 +284,8 @@ class VastAIBot:
 
                     for account_name, account_data in self.vast_accounts.items():
                         await self.process_account(account_name, account_data, session)
+                        await asyncio.sleep(2)  # try to prevent too many requests response
+
 
                     self.save_json(STATUS_FILE, self.previous_status)
 
