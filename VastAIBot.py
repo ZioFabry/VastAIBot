@@ -168,6 +168,8 @@ class VastAIBot:
             listed_gpu_cost: float = 0.0
             min_bid_price: float = 0.0
             listed_storage_cost: float = 0.0
+            listed_inet_down_cost: float = 0.0
+            listed_inet_up_cost: float = 0.0
             listed_min_gpu_count: int = 0
             num_reports: int = server.get("num_reports", "") or 0
 
@@ -178,6 +180,8 @@ class VastAIBot:
                 listed_gpu_cost = server.get("listed_gpu_cost", 0) or 0.0
                 listed_storage_cost = server.get("listed_storage_cost", 0) or 0.0
                 listed_min_gpu_count = server.get("listed_min_gpu_count", 0) or 0
+                listed_inet_down_cost = server.get("listed_inet_down_cost", 0) or 0.0
+                listed_inet_up_cost = server.get("listed_inet_up_cost", 0) or 0.0
                 price_info = f"💵{listed_gpu_cost:.2f} {min_bid_price:.2f} {listed_storage_cost:.2f}"
             else:
                 rented_gpus = running
@@ -201,6 +205,8 @@ class VastAIBot:
                 p_min_bid_price = old_data.get("min_bid_price") or 0.0
                 p_listed_min_gpu_count = old_data.get("listed_min_gpu_count") or 0.0
                 p_num_reports = old_data.get("num_reports") or 0
+                p_listed_inet_down_cost = old_data.get("listed_inet_down_cost") or 0.0
+                p_listed_inet_up_cost = old_data.get("listed_inet_up_cost") or 0.0
 
                 p_gpu_status = f"{p_rented_gpus}/{num_gpus}"
 
@@ -234,6 +240,18 @@ class VastAIBot:
                     changes_lines.append(
                         f"⚠️{server_id} 🪫 min bid change, {p_min_bid_price} » {min_bid_price}\n"
                     )
+                if p_listed_inet_down_cost != listed_inet_down_cost:
+                    changes_detected = True
+                    changes_lines.append(
+                        f"⚠️{server_id} 🌐 inet down change, {p_listed_inet_down_cost*1024.0:.2f}$ » {listed_inet_down_cost*1024.0:.2f}$\n"
+                    )
+
+                if p_listed_inet_up_cost != listed_inet_up_cost:
+                    changes_detected = True
+                    changes_lines.append(
+                        f"⚠️{server_id} 🌐 inet up change, {p_listed_inet_up_cost*1024.0:.2f}$ » {listed_inet_up_cost*1024.0:.2f}$\n"
+                    )
+
                 if p_num_reports != num_reports:
                     changes_detected = True
                     changes_lines.append(
@@ -255,6 +273,8 @@ class VastAIBot:
                 "reliability": reliability,
                 "num_reports": num_reports,
                 "gpu_occupancy": gpu_occupancy,
+                "listed_inet_down_cost": listed_inet_down_cost,
+                "listed_inet_up_cost": listed_inet_up_cost,
             }
             account_lines.append(server_line)
 
@@ -284,8 +304,9 @@ class VastAIBot:
 
                     for account_name, account_data in self.vast_accounts.items():
                         await self.process_account(account_name, account_data, session)
-                        await asyncio.sleep(2)  # try to prevent too many requests response
 
+                        # try to prevent too many requests response
+                        await asyncio.sleep(2)
 
                     self.save_json(STATUS_FILE, self.previous_status)
 
