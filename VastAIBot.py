@@ -9,6 +9,8 @@ import traceback
 from dotenv import load_dotenv
 from telegram import Bot
 from typing import List, Dict, Any, Optional
+import influxdb_client
+from influxdb_client.client.write_api import SYNCHRONOUS
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -27,13 +29,26 @@ TELEGRAM_API_URL = os.getenv("TELEGRAM_API_URL", "https://api.telegram.org") + "
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-
 class VastAIBot:
     def __init__(self):
         self.previous_status: Dict[str, Any] = {}
         self.vast_accounts: Dict[str, Any] = {}
         self.shutdown_event = asyncio.Event()
         self.bot: Optional[Bot] = None
+
+        # Load InfluxDB parameters from .env
+        self.influxdb_url = os.getenv("INFLUXDB_URL")
+        self.influxdb_token = os.getenv("INFLUXDB_TOKEN")
+        self.influxdb_org = os.getenv("INFLUXDB_ORG")
+        self.influxdb_bucket = os.getenv("INFLUXDB_BUCKET")
+
+        # Initialize InfluxDB client
+        self.influx_client = influxdb_client.InfluxDBClient(
+            url=self.influxdb_url,
+            token=self.influxdb_token,
+            org=self.influxdb_org,
+        )
+        self.write_api = self.influx_client.write_api(write_options=SYNCHRONOUS)
 
     @staticmethod
     def load_json(file_path: str) -> Dict[str, Any]:
@@ -121,6 +136,59 @@ class VastAIBot:
     ) -> Dict[str, Any]:
         return await self.call_vast_api(f"{VAST_URL}/user/earnings", api_key, session)
 
+    def save_to_influxdb(
+        self, account_name: str, server_id: str, server_data: Dict[str, Any]
+    ) -> None:
+        """
+        Save numeric values of server data to InfluxDB.
+        """
+        points = []
+        for key, value in server_data.items():
+            if isinstance(value, (int, float)):  # Only save numeric values
+                point = (
+                    influxdb_client.Point("vastai")
+                    .tag("account_name", account_name)
+                    .tag("server_id", server_id)
+                    .field(key, value)
+                )
+                points.append(point)
+
+        try:
+            self.write_api.write(
+                bucket=self.influxdb_bucket, org=self.influxdb_org, record=points
+            )
+            logging.info(f"Data for server {server_id} saved to InfluxDB.")
+        except Exception as e:
+            logging.error(
+                f"Failed to write data to InfluxDB for server {server_id}: {e}"
+            )
+
+    def save_earnings_to_influxdb(
+        self, account_name: str, server_data: Dict[str, Any]
+    ) -> None:
+        """
+        Save numeric values of server data to InfluxDB.
+        """
+        points = []
+        for key, value in server_data.items():
+            if isinstance(value, (int, float)):  # Only save numeric values
+                point = (
+                    influxdb_client.Point("vastai")
+                    .tag("account_name", account_name)
+                    .field(key, value)
+                )
+                points.append(point)
+
+        try:
+            self.write_api.write(
+                bucket=self.influxdb_bucket, org=self.influxdb_org, record=points
+            )
+            logging.info(f"Data for account {account_name} saved to InfluxDB.")
+        except Exception as e:
+            logging.error(
+                f"Failed to write data to InfluxDB for account {account_name}: {e}"
+            )
+
     async def process_account(
         self,
         account_name: str,
@@ -145,6 +213,12 @@ class VastAIBot:
 
         earnings = await self.get_user_earnings(api_key, session)
         machine_earnings = earnings.get("machine_earnings", 0) or 0.0
+
+        # Save numeric values to InfluxDB
+        self.save_earnings_to_influxdb(
+            account_name, {"balance": balance, "machine_earnings": machine_earnings}
+        )
+
         await asyncio.sleep(1)  # try to prevent too many requests response
 
         servers = await self.get_server_status(api_key, session)
@@ -172,6 +246,7 @@ class VastAIBot:
             listed_inet_up_cost: float = 0.0
             listed_min_gpu_count: int = 0
             num_reports: int = server.get("num_reports", "") or 0
+            verification: str = server.get("verification", "None")
 
             min_bid_price: float = server.get("min_bid_price", 0) or 0.0
 
@@ -207,6 +282,7 @@ class VastAIBot:
                 p_num_reports = old_data.get("num_reports") or 0
                 p_listed_inet_down_cost = old_data.get("listed_inet_down_cost") or 0.0
                 p_listed_inet_up_cost = old_data.get("listed_inet_up_cost") or 0.0
+                p_verification = old_data.get("verification", "")
 
                 p_gpu_status = f"{p_rented_gpus}/{num_gpus}"
 
@@ -257,6 +333,11 @@ class VastAIBot:
                     changes_lines.append(
                         f"⚠️{server_id} 🚨 num reports change, {p_num_reports} » {num_reports}\n"
                     )
+                if p_verification != verification:
+                    changes_detected = True
+                    changes_lines.append(
+                        f"⚠️{server_id} 🔍 verification change, {p_verification} » {verification}\n"
+                    )
 
             else:
                 changes_detected = True
@@ -275,7 +356,18 @@ class VastAIBot:
                 "gpu_occupancy": gpu_occupancy,
                 "listed_inet_down_cost": listed_inet_down_cost,
                 "listed_inet_up_cost": listed_inet_up_cost,
+                "earn_hour": earn_hour,
+                "earn_day": earn_day,
+                "running": running,
+                "resident": resident,
+                "verification": verification,
             }
+
+            # Save numeric values to InfluxDB
+            self.save_to_influxdb(
+                account_name, server_id, self.previous_status[server_id]
+            )
+
             account_lines.append(server_line)
 
         if changes_lines:

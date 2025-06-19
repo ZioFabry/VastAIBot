@@ -1,12 +1,12 @@
 # VastAIBot
 
-VastAIBot is a Python-based monitoring tool that tracks the status of your rented servers on [Vast.ai](https://vast.ai) and sends updates via Telegram. It provides real-time notifications about server status changes, pricing updates, and other relevant metrics.
+VastAIBot is a Python-based monitoring tool that tracks the status of your rented servers on [Vast.ai](https://vast.ai) and sends updates via Telegram. It provides real-time notifications about server status changes, pricing updates, and other relevant metrics stored on InfluxDB.
 
 ## Features
 
 - Monitors multiple Vast.ai accounts and their associated servers.
 - Sends real-time notifications to a Telegram chat or group.
-- Tracks server metrics such as rental status, GPU usage, pricing, and reliability.
+- Tracks server metrics such as rental status, GPU usage, pricing, and reliability on InfluxDB.
 - Logs all activities for debugging and auditing purposes.
 - Automatically restarts on failure to ensure continuous monitoring.
 
@@ -18,6 +18,7 @@ Before running VastAIBot, ensure you have the following:
 2. Required Python packages listed in `requirements.txt`.
 3. A Telegram bot token and chat ID for notifications.
 4. API keys for your Vast.ai accounts.
+5. InfluxDB up & running
 
 ## Installation
 
@@ -44,6 +45,10 @@ Before running VastAIBot, ensure you have the following:
      TELEGRAM_BOT_TOKEN=<your-telegram-bot-token>
      TELEGRAM_CHAT_ID=<your-telegram-chat-id>
      CHECK_INTERVAL=300
+     INFLUXDB_URL=http://127.0.0.1:8086
+     INFLUXDB_TOKEN='<put-your-influxdb-token-here>'
+     INFLUXDB_ORG='<put-your-influxdb-org-here>'
+     INFLUXDB_BUCKET='<put-your-influxdb-bucket-here>'
      ```
 
 4. Configure your Vast.ai accounts:
@@ -105,6 +110,10 @@ Logs are stored in the log directory. The main log file is VastAIBot.log.
 | `TELEGRAM_BOT_TOKEN` | Token for your Telegram bot.                     |
 | `TELEGRAM_CHAT_ID`   | Chat ID where notifications will be sent.        |
 | `CHECK_INTERVAL`     | Interval (in seconds) between status checks.     |
+| `INFLUXDB_URL`       | InfluxDB Url                                     |
+| `INFLUXDB_TOKEN`     | InfluxDB Token                                   |
+| `INFLUXDB_ORG`       | InfluxDB Organization                            |
+| `INFLUXDB_BUCKET`    | InfluxDB Bucket name                             |
 
 ## Configuration File (`config.json`)
 
@@ -157,3 +166,4 @@ Contributions are welcome! Please fork the repository and submit a pull request.
 
 - [Vast.ai](https://vast.ai) for their API.
 - [Telegram](https://core.telegram.org/bots) for their bot platform.
+- [Influx](https://docs.influxdata.com/) for InfluxDB
