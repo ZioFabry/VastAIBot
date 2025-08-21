@@ -1,5 +1,6 @@
 {
     "Account1": {
+        "emoji": "1️⃣",
         "api_key": "<account1_api_key>",
         "machine_ids": [
             <account1_machine_id1>,
@@ -13,6 +14,7 @@
         ]
     },
     "Account2": {
+        "emoji": "2️⃣",
         "api_key": "<account2_api_key>",
         "machine_ids": [
             <account2_machine_id1>,

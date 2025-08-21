@@ -206,6 +206,7 @@ class VastAIBot:
         api_key = account_data["api_key"]
         notify = account_data["notify"]
         server_ids = account_data["machine_ids"]
+        emoji = account_data.get("emoji", "👤")
 
         user = await self.get_current_user(api_key, session)
         balance: float = user.get("balance", 0)
@@ -242,6 +243,7 @@ class VastAIBot:
             listed_gpu_cost: float = 0.0
             min_bid_price: float = 0.0
             listed_storage_cost: float = 0.0
+            listed_volume_cost: float = 0.0
             listed_inet_down_cost: float = 0.0
             listed_inet_up_cost: float = 0.0
             listed_min_gpu_count: int = 0
@@ -257,19 +259,21 @@ class VastAIBot:
                 listed_min_gpu_count = server.get("listed_min_gpu_count", 0) or 0
                 listed_inet_down_cost = server.get("listed_inet_down_cost", 0) or 0.0
                 listed_inet_up_cost = server.get("listed_inet_up_cost", 0) or 0.0
-                price_info = f"💵{listed_gpu_cost:.2f} {min_bid_price:.2f} {listed_storage_cost:.2f}"
+                listed_volume_cost = server.get("listed_volume_cost", 0) or 0.0
+                price_info = f"💵{listed_gpu_cost:.2f} {min_bid_price:.2f} {listed_storage_cost:.2f}/{listed_volume_cost:.2f}"
             else:
                 rented_gpus = running
                 price_info = "❌ NotList ❌"
 
+            verification_str = f"🛂" if verification != "verified" else f"🖥️"
             status_str = f"✅" if rented else "❌"
             gpu_status = f"{rented_gpus}/{num_gpus}"
             # earning_info = f"💰{earn_hour:.2f}$ / {earn_day:.2f}$"
             reliability_info = f"🎯{reliability*100:.2f}%"
             running_info = (f"🗄️{resident}" if resident > 0 else "") + (
-                f"👤{running}" if rented else ""
+                f" 🏃‍♂️{running}" if rented else ""
             )
-            server_line = f"🖥️{server_id} {status_str}{gpu_status}«{listed_min_gpu_count} {price_info} {reliability_info} {running_info}\n"
+            server_line = f"{verification_str}{server_id} {status_str}{gpu_status}«{listed_min_gpu_count} {price_info} {reliability_info} {running_info}\n"
 
             old_data = self.previous_status.get(server_id)
             if old_data is not None:
@@ -282,7 +286,10 @@ class VastAIBot:
                 p_num_reports = old_data.get("num_reports") or 0
                 p_listed_inet_down_cost = old_data.get("listed_inet_down_cost") or 0.0
                 p_listed_inet_up_cost = old_data.get("listed_inet_up_cost") or 0.0
+                p_listed_volume_cost = old_data.get("listed_volume_cost") or 0.0
                 p_verification = old_data.get("verification", "")
+                p_running = old_data.get("running", 0) or 0
+                p_resident = old_data.get("resident", 0) or 0
 
                 p_gpu_status = f"{p_rented_gpus}/{num_gpus}"
 
@@ -296,13 +303,18 @@ class VastAIBot:
                 if p_listed_gpu_cost != listed_gpu_cost:
                     changes_detected = True
                     changes_lines.append(
-                        f"⚠️{server_id} 💰 price change, {p_listed_gpu_cost:.4f}$ » {listed_gpu_cost:.4f}$\n"
+                        f"⚠️{server_id} 💰 gpu price change, {p_listed_gpu_cost:.4f}$ » {listed_gpu_cost:.4f}$\n"
                     )
 
                 if p_listed_storage_cost != listed_storage_cost:
                     changes_detected = True
                     changes_lines.append(
-                        f"⚠️{server_id} 💾 price change, {p_listed_storage_cost:.4f}$ » {listed_storage_cost:.4f}$\n"
+                        f"⚠️{server_id} 💾 storage price change, {p_listed_storage_cost:.4f}$ » {listed_storage_cost:.4f}$\n"
+                    )
+                if p_listed_volume_cost != listed_volume_cost:
+                    changes_detected = True
+                    changes_lines.append(
+                        f"⚠️{server_id} 📦 volume price change, {p_listed_volume_cost:.4f}$ » {listed_volume_cost:.4f}$\n"
                     )
 
                 if p_listed_min_gpu_count != listed_min_gpu_count:
@@ -336,7 +348,17 @@ class VastAIBot:
                 if p_verification != verification:
                     changes_detected = True
                     changes_lines.append(
-                        f"⚠️{server_id} 🔍 verification change, {p_verification} » {verification}\n"
+                        f"⚠️{server_id} 🛂 verification change, {p_verification} » {verification}\n"
+                    )
+                if p_running != running:
+                    changes_detected = True
+                    changes_lines.append(
+                        f"⚠️{server_id} 🏃‍♂️ running change, {p_running} » {running}\n"
+                    ) 
+                if p_resident != resident:
+                    changes_detected = True
+                    changes_lines.append(
+                        f"⚠️{server_id} 🗄️ resident change, {p_resident} » {resident}\n"
                     )
 
             else:
@@ -356,6 +378,7 @@ class VastAIBot:
                 "gpu_occupancy": gpu_occupancy,
                 "listed_inet_down_cost": listed_inet_down_cost,
                 "listed_inet_up_cost": listed_inet_up_cost,
+                "listed_volume_cost": listed_volume_cost,
                 "earn_hour": earn_hour,
                 "earn_day": earn_day,
                 "running": running,
@@ -376,7 +399,7 @@ class VastAIBot:
         if (first_run or changes_detected) and account_lines:
             messages.insert(
                 0,
-                f"👤 {account_name} 💰 {balance:.2f}$ 🏦 {machine_earnings:.2f}$\n\n"
+                f"{emoji} {account_name} 💰 {balance:.2f}$ 🏦 {machine_earnings:.2f}$\n\n"
                 + "".join(changes_lines)
                 + "".join(account_lines),
             )
@@ -384,7 +407,7 @@ class VastAIBot:
             for message in messages:
                 await self.send_telegram_message(message, notify)
         else:
-            logging.info(f"👤 {account_name} No changes detected.")
+            logging.info(f"{emoji} {account_name} No changes detected.")
 
     async def monitor_servers(self) -> None:
         async with aiohttp.ClientSession() as session:
