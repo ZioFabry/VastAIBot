@@ -190,10 +190,9 @@ class VastAIBot:
                 f"Failed to write data to InfluxDB for account {account_name}: {e}"
             )
 
-    # 🔼🔽⬆️⬇️↗️↙️↖️↘️⏫⏬🔄⤴️⤵️
-    # 🔺🔻♦️🔸🔹🔶🔷✈️🛩🟩🟢✅🪐🌍🌏🌎
-
     def up_down(self, old: float, new: float) -> str:
+        # 🔼🔽⬆️⬇️↗️↙️↖️↘️⏫⏬🔄⤴️⤵️
+        # 🔺🔻♦️🔸🔹🔶🔷✈️🛩🟩🟢✅🪐🌍🌏🌎
         if new > old:
             return "⤴️"
         elif new < old:
@@ -411,10 +410,25 @@ class VastAIBot:
 
             account_lines.append(server_line)
 
+        if self.previous_status.get(account_name) is None:
+            self.previous_status[account_name] = {}
+            first_run = True
+
+        last_notify = self.previous_status[account_name].get("last_notify", asyncio.get_event_loop().time())
+        last_expire_in = self.previous_status[account_name].get("last_expire_in", 0)
+
+        hours_excluded = self.previous_status[account_name].get("hours_excluded", [22, 23, 0, 1, 2, 3, 4, 5, 6, 7])
+        current_hour = int(asyncio.get_event_loop().time() // 3600 % 24)
+        if current_hour in hours_excluded:
+            last_expire_in = 0
+
+        if last_expire_in > 0 and (asyncio.get_event_loop().time() - last_notify) >= last_expire_in:
+            first_run = True
+
         if changes_lines:
             changes_lines.append(f"\n")
 
-        if (first_run or changes_detected) and account_lines:
+        if first_run or changes_detected and account_lines:
             messages.insert(
                 0,
                 f"{emoji} {account_name} 💰 {balance:.2f}$ 🏦 {machine_earnings:.2f}$\n\n"
@@ -424,8 +438,16 @@ class VastAIBot:
 
             for message in messages:
                 await self.send_telegram_message(message, notify)
+
+            last_notify = asyncio.get_event_loop().time()
         else:
             logging.info(f"{emoji} {account_name} No changes detected.")
+
+        self.previous_status[account_name]["balance"] = balance
+        self.previous_status[account_name]["machine_earnings"] = machine_earnings
+        self.previous_status[account_name]["last_expire_in"] = last_expire_in
+        self.previous_status[account_name]["last_notify"] = last_notify
+        self.previous_status[account_name]["hours_excluded"] = hours_excluded
 
     async def monitor_servers(self) -> None:
         async with aiohttp.ClientSession() as session:
