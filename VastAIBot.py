@@ -6,6 +6,7 @@ import logging
 import re
 import signal
 import traceback
+import time
 from dotenv import load_dotenv
 from telegram import Bot
 from typing import List, Dict, Any, Optional
@@ -414,15 +415,13 @@ class VastAIBot:
             self.previous_status[account_name] = {}
             first_run = True
 
-        last_notify = self.previous_status[account_name].get("last_notify", asyncio.get_event_loop().time())
+        last_notify = self.previous_status[account_name].get("last_notify", time.time())
         last_expire_in = self.previous_status[account_name].get("last_expire_in", 0)
 
-        hours_excluded = self.previous_status[account_name].get("hours_excluded", [22, 23, 0, 1, 2, 3, 4, 5, 6, 7])
-        current_hour = int(asyncio.get_event_loop().time() // 3600 % 24)
-        if current_hour in hours_excluded:
-            last_expire_in = 0
+        hours_excluded = self.previous_status[account_name].get("hours_excluded", [21, 22, 23, 0, 1, 2, 3, 4, 5, 6])
+        current_hour = int(time.time() // 3600 % 24)
 
-        if last_expire_in > 0 and (asyncio.get_event_loop().time() - last_notify) >= last_expire_in:
+        if current_hour not in hours_excluded and last_expire_in > 0 and (time.time() - last_notify) >= last_expire_in:
             first_run = True
 
         if changes_lines:
@@ -431,7 +430,7 @@ class VastAIBot:
         if first_run or changes_detected and account_lines:
             messages.insert(
                 0,
-                f"{emoji} {account_name} 💰 {balance:.2f}$ 🏦 {machine_earnings:.2f}$\n\n"
+                f"{emoji} {account_name} 💰 {balance:,.2f}$ 🏦 {machine_earnings:,.2f}$\n\n"
                 + "".join(changes_lines)
                 + "".join(account_lines),
             )
@@ -439,7 +438,7 @@ class VastAIBot:
             for message in messages:
                 await self.send_telegram_message(message, notify)
 
-            last_notify = asyncio.get_event_loop().time()
+            last_notify = time.time()
         else:
             logging.info(f"{emoji} {account_name} No changes detected.")
 
