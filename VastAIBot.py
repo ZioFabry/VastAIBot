@@ -29,6 +29,7 @@ TELEGRAM_API_URL = os.getenv("TELEGRAM_API_URL", "https://api.telegram.org") + "
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
+
 class VastAIBot:
     def __init__(self):
         self.previous_status: Dict[str, Any] = {}
@@ -189,6 +190,17 @@ class VastAIBot:
                 f"Failed to write data to InfluxDB for account {account_name}: {e}"
             )
 
+    # 🔼🔽⬆️⬇️↗️↙️↖️↘️⏫⏬🔄⤴️⤵️
+    # 🔺🔻♦️🔸🔹🔶🔷✈️🛩🟩🟢✅🪐🌍🌏🌎
+
+    def up_down(self, old: float, new: float) -> str:
+        if new > old:
+            return "⤴️"
+        elif new < old:
+            return "⤵️"
+        else:
+            return "🟰"
+
     async def process_account(
         self,
         account_name: str,
@@ -260,7 +272,8 @@ class VastAIBot:
                 listed_inet_down_cost = server.get("listed_inet_down_cost", 0) or 0.0
                 listed_inet_up_cost = server.get("listed_inet_up_cost", 0) or 0.0
                 listed_volume_cost = server.get("listed_volume_cost", 0) or 0.0
-                price_info = f"💵{listed_gpu_cost:.2f} {min_bid_price:.2f} {listed_storage_cost:.2f}/{listed_volume_cost:.2f}"
+                # price_info = f"💵{listed_gpu_cost:.2f}/{min_bid_price:.2f} {listed_storage_cost:.2f}/{listed_volume_cost:.2f}"
+                price_info = f"💵{listed_gpu_cost:.2f} {listed_storage_cost:.2f}"
             else:
                 rented_gpus = running
                 price_info = "❌ NotList ❌"
@@ -295,72 +308,77 @@ class VastAIBot:
 
                 if p_rented != rented or p_rented_gpus != rented_gpus:
                     changes_detected = True
-                    ico_status = "🚀" if p_rented_gpus < rented_gpus else "🛬"
+                    ico_status = "🚀" if p_rented_gpus < rented_gpus else "🛩"
                     changes_lines.append(
-                        f"{ico_status}{server_id} {status_str} {p_gpu_status} » {rented_gpus}/{num_gpus} = {(gpu_occupancy.replace(' ', ''))}\n"
+                        f"{ico_status}{server_id} {status_str} {p_gpu_status}»{rented_gpus}/{num_gpus} {(gpu_occupancy.replace(' ', ''))}"
                     )
+                    if p_resident != resident:
+                        changes_lines.append(f"🗄️{p_resident}»{resident}")
+                    if p_running != p_running:
+                        changes_lines.append(f"🏃‍♂️{p_running}»{running}")
+                    changes_lines.append("\n")
+                else:
+                    if p_resident != resident:
+                        changes_detected = True
+                        changes_lines.append(
+                            f"{self.up_down(p_resident,resident)}{server_id} 🗄️ {p_resident} » {resident}\n"
+                        )
+                    if p_running != running:
+                        changes_detected = True
+                        changes_lines.append(
+                            f"{self.up_down(p_running,running)}{server_id} 🏃‍♂️ {p_running} » {running}\n"
+                        )
 
                 if p_listed_gpu_cost != listed_gpu_cost:
                     changes_detected = True
                     changes_lines.append(
-                        f"⚠️{server_id} 💰 gpu price change, {p_listed_gpu_cost:.4f}$ » {listed_gpu_cost:.4f}$\n"
+                        f"{self.up_down(p_listed_gpu_cost,listed_gpu_cost)}{server_id} 💰 GPU {p_listed_gpu_cost:.4f}$ » {listed_gpu_cost:.4f}$\n"
                     )
 
                 if p_listed_storage_cost != listed_storage_cost:
                     changes_detected = True
                     changes_lines.append(
-                        f"⚠️{server_id} 💾 storage price change, {p_listed_storage_cost:.4f}$ » {listed_storage_cost:.4f}$\n"
+                        f"{self.up_down(p_listed_storage_cost,listed_storage_cost)}{server_id} 💾 Storage {p_listed_storage_cost:.4f}$ » {listed_storage_cost:.4f}$\n"
                     )
                 if p_listed_volume_cost != listed_volume_cost:
                     changes_detected = True
                     changes_lines.append(
-                        f"⚠️{server_id} 📦 volume price change, {p_listed_volume_cost:.4f}$ » {listed_volume_cost:.4f}$\n"
+                        f"{self.up_down(p_listed_volume_cost,listed_volume_cost)}{server_id} 📦 Volume {p_listed_volume_cost:.4f}$ » {listed_volume_cost:.4f}$\n"
                     )
 
                 if p_listed_min_gpu_count != listed_min_gpu_count:
                     changes_detected = True
                     changes_lines.append(
-                        f"⚠️{server_id} 🎞 min gpu change, {p_listed_min_gpu_count} » {listed_min_gpu_count}\n"
+                        f"{self.up_down(p_listed_min_gpu_count,listed_min_gpu_count)}{server_id} 🎞 Min GPU {p_listed_min_gpu_count} » {listed_min_gpu_count}\n"
                     )
 
                 if p_min_bid_price != min_bid_price:
                     changes_detected = True
                     changes_lines.append(
-                        f"⚠️{server_id} 🪫 min bid change, {p_min_bid_price} » {min_bid_price}\n"
+                        f"{self.up_down(p_min_bid_price,min_bid_price)}{server_id} 🪫 Min Bid {p_min_bid_price} » {min_bid_price}\n"
                     )
                 if p_listed_inet_down_cost != listed_inet_down_cost:
                     changes_detected = True
                     changes_lines.append(
-                        f"⚠️{server_id} 🌐 inet down change, {p_listed_inet_down_cost*1024.0:.2f}$ » {listed_inet_down_cost*1024.0:.2f}$\n"
+                        f"{self.up_down(p_listed_inet_down_cost,listed_inet_down_cost)}{server_id} 🌐 Inet down {p_listed_inet_down_cost*1024.0:.2f}$ » {listed_inet_down_cost*1024.0:.2f}$\n"
                     )
 
                 if p_listed_inet_up_cost != listed_inet_up_cost:
                     changes_detected = True
                     changes_lines.append(
-                        f"⚠️{server_id} 🌐 inet up change, {p_listed_inet_up_cost*1024.0:.2f}$ » {listed_inet_up_cost*1024.0:.2f}$\n"
+                        f"{self.up_down(p_listed_inet_up_cost,listed_inet_up_cost)}{server_id} 🌐 Inet up {p_listed_inet_up_cost*1024.0:.2f}$ » {listed_inet_up_cost*1024.0:.2f}$\n"
                     )
 
                 if p_num_reports != num_reports:
                     changes_detected = True
                     changes_lines.append(
-                        f"⚠️{server_id} 🚨 num reports change, {p_num_reports} » {num_reports}\n"
+                        f"{self.up_down(p_num_reports,num_reports)}{server_id} 🚨 Reports {p_num_reports} » {num_reports}\n"
                     )
                 if p_verification != verification:
                     changes_detected = True
                     changes_lines.append(
-                        f"⚠️{server_id} 🛂 verification change, {p_verification} » {verification}\n"
+                        f"⚠️{server_id} 🛂 {p_verification} » {verification}\n"
                     )
-                if p_running != running:
-                    changes_detected = True
-                    changes_lines.append(
-                        f"⚠️{server_id} 🏃‍♂️ running change, {p_running} » {running}\n"
-                    ) 
-                if p_resident != resident:
-                    changes_detected = True
-                    changes_lines.append(
-                        f"⚠️{server_id} 🗄️ resident change, {p_resident} » {resident}\n"
-                    )
-
             else:
                 changes_detected = True
 
