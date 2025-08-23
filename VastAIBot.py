@@ -314,7 +314,7 @@ class VastAIBot:
                     )
                     if p_resident != resident:
                         changes_lines.append(f"🗄️{p_resident}»{resident}")
-                    if p_running != p_running:
+                    if p_running != running:
                         changes_lines.append(f"🏃‍♂️{p_running}»{running}")
                     changes_lines.append("\n")
                 else:
