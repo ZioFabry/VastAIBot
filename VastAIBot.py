@@ -286,7 +286,7 @@ class VastAIBot:
             running_info = (f"🗄️{resident}" if resident > 0 else "") + (
                 f" 🏃‍♂️{running}" if rented else ""
             )
-            server_line = f"{verification_str}{server_id} {status_str}{gpu_status}«{listed_min_gpu_count} {price_info} {reliability_info} {running_info}\n"
+            server_line = f"{verification_str}{server_id} {price_info} {reliability_info} {status_str}{gpu_status}«{listed_min_gpu_count} {running_info}\n"
 
             old_data = self.previous_status.get(server_id)
             if old_data is not None:
@@ -355,7 +355,7 @@ class VastAIBot:
                 if p_min_bid_price != min_bid_price:
                     changes_detected = True
                     changes_lines.append(
-                        f"{self.up_down(p_min_bid_price,min_bid_price)}{server_id} 🪫 Min Bid {p_min_bid_price} » {min_bid_price}\n"
+                        f"{self.up_down(p_min_bid_price,min_bid_price)}{server_id} 🪫 Min Bid {p_min_bid_price:.4f} » {min_bid_price:.4f}\n"
                     )
                 if p_listed_inet_down_cost != listed_inet_down_cost:
                     changes_detected = True
