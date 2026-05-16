@@ -321,63 +321,63 @@ class VastAIBot:
                     if p_resident != resident:
                         changes_detected = True
                         changes_lines.append(
-                            f"{self.up_down(p_resident,resident)}{server_id} 🗄️ {p_resident} » {resident}\n"
+                            f"{self.up_down(p_resident,resident)}{server_id} 🗄️{p_resident} » {resident}\n"
                         )
                     if p_running != running:
                         changes_detected = True
                         changes_lines.append(
-                            f"{self.up_down(p_running,running)}{server_id} 🏃‍♂️ {p_running} » {running}\n"
+                            f"{self.up_down(p_running,running)}{server_id} 🏃‍♂️{p_running} » {running}\n"
                         )
 
                 if p_listed_gpu_cost != listed_gpu_cost:
                     changes_detected = True
                     changes_lines.append(
-                        f"{self.up_down(p_listed_gpu_cost,listed_gpu_cost)}{server_id} 💰 GPU {p_listed_gpu_cost:.4f}$ » {listed_gpu_cost:.4f}$\n"
+                        f"{self.up_down(p_listed_gpu_cost,listed_gpu_cost)}{server_id} 💰{p_listed_gpu_cost:.2f}$ » {listed_gpu_cost:.2f}$\n"
                     )
 
                 if p_listed_storage_cost != listed_storage_cost:
                     changes_detected = True
                     changes_lines.append(
-                        f"{self.up_down(p_listed_storage_cost,listed_storage_cost)}{server_id} 💾 Storage {p_listed_storage_cost:.4f}$ » {listed_storage_cost:.4f}$\n"
+                        f"{self.up_down(p_listed_storage_cost,listed_storage_cost)}{server_id} 💾{p_listed_storage_cost:.2f}$ » {listed_storage_cost:.2f}$\n"
                     )
                 if p_listed_volume_cost != listed_volume_cost:
                     changes_detected = True
                     changes_lines.append(
-                        f"{self.up_down(p_listed_volume_cost,listed_volume_cost)}{server_id} 📦 Volume {p_listed_volume_cost:.4f}$ » {listed_volume_cost:.4f}$\n"
+                        f"{self.up_down(p_listed_volume_cost,listed_volume_cost)}{server_id} 📦{p_listed_volume_cost:.2f}$ » {listed_volume_cost:.2f}$\n"
                     )
 
                 if p_listed_min_gpu_count != listed_min_gpu_count:
                     changes_detected = True
                     changes_lines.append(
-                        f"{self.up_down(p_listed_min_gpu_count,listed_min_gpu_count)}{server_id} 🎞 Min GPU {p_listed_min_gpu_count} » {listed_min_gpu_count}\n"
+                        f"{self.up_down(p_listed_min_gpu_count,listed_min_gpu_count)}{server_id} 🎞{p_listed_min_gpu_count} » {listed_min_gpu_count}\n"
                     )
 
                 if p_min_bid_price != min_bid_price:
                     changes_detected = True
                     changes_lines.append(
-                        f"{self.up_down(p_min_bid_price,min_bid_price)}{server_id} 🪫 Min Bid {p_min_bid_price:.4f} » {min_bid_price:.4f}\n"
+                        f"{self.up_down(p_min_bid_price,min_bid_price)}{server_id} 🪫{p_min_bid_price:.2f} » {min_bid_price:.2f}\n"
                     )
                 if p_listed_inet_down_cost != listed_inet_down_cost:
                     changes_detected = True
                     changes_lines.append(
-                        f"{self.up_down(p_listed_inet_down_cost,listed_inet_down_cost)}{server_id} 🌐 Inet down {p_listed_inet_down_cost*1024.0:.2f}$ » {listed_inet_down_cost*1024.0:.2f}$\n"
+                        f"{self.up_down(p_listed_inet_down_cost,listed_inet_down_cost)}{server_id} 🌐🔻{p_listed_inet_down_cost*1024.0:.2f}$ » {listed_inet_down_cost*1024.0:.2f}$\n"
                     )
 
                 if p_listed_inet_up_cost != listed_inet_up_cost:
                     changes_detected = True
                     changes_lines.append(
-                        f"{self.up_down(p_listed_inet_up_cost,listed_inet_up_cost)}{server_id} 🌐 Inet up {p_listed_inet_up_cost*1024.0:.2f}$ » {listed_inet_up_cost*1024.0:.2f}$\n"
+                        f"{self.up_down(p_listed_inet_up_cost,listed_inet_up_cost)}{server_id} 🌐🔺{p_listed_inet_up_cost*1024.0:.2f}$ » {listed_inet_up_cost*1024.0:.2f}$\n"
                     )
 
                 if p_num_reports != num_reports:
                     changes_detected = True
                     changes_lines.append(
-                        f"{self.up_down(p_num_reports,num_reports)}{server_id} 🚨 Reports {p_num_reports} » {num_reports}\n"
+                        f"{self.up_down(p_num_reports,num_reports)}{server_id} 🚨{p_num_reports} » {num_reports}\n"
                     )
                 if p_verification != verification:
                     changes_detected = True
                     changes_lines.append(
-                        f"⚠️{server_id} 🛂 {p_verification} » {verification}\n"
+                        f"⚠️{server_id} 🛂{p_verification} » {verification}\n"
                     )
             else:
                 changes_detected = True
