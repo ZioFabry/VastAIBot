@@ -355,7 +355,7 @@ class VastAIBot:
                 if p_min_bid_price != min_bid_price:
                     changes_detected = True
                     changes_lines.append(
-                        f"{self.up_down(p_min_bid_price,min_bid_price)}{server_id} 🪫{p_min_bid_price:.2f} » {min_bid_price:.2f}\n"
+                        f"{self.up_down(p_min_bid_price,min_bid_price)}{server_id} 🪫{p_min_bid_price:.2f}$ » {min_bid_price:.2f}$\n"
                     )
                 if p_listed_inet_down_cost != listed_inet_down_cost:
                     changes_detected = True
