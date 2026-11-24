@@ -264,8 +264,10 @@ class VastAIBot:
 
             min_bid_price: float = server.get("min_bid_price", 0) or 0.0
 
+            contract_gpus = gpu_occupancy.count("D") + gpu_occupancy.count("I")
+
             if listed:
-                rented_gpus = gpu_occupancy.count("D") + gpu_occupancy.count("I")
+                rented_gpus = contract_gpus
                 listed_gpu_cost = server.get("listed_gpu_cost", 0) or 0.0
                 listed_storage_cost = server.get("listed_storage_cost", 0) or 0.0
                 listed_min_gpu_count = server.get("listed_min_gpu_count", 0) or 0
@@ -286,7 +288,13 @@ class VastAIBot:
             running_info = (f"🗄️{resident}" if resident > 0 else "") + (
                 f" 🏃‍♂️{running}" if rented else ""
             )
-            server_line = f"{verification_str}{server_id} {price_info} {reliability_info} {status_str}{gpu_status}«{listed_min_gpu_count} {running_info}\n"
+            # earn_hour includes storage and bandwidth, so this is slightly above the pure GPU rate
+            contract_info = (
+                f" 🤝{earn_hour / contract_gpus:.2f}"
+                if contract_gpus > 0 and earn_hour > 0
+                else ""
+            )
+            server_line = f"{verification_str}{server_id} {price_info}{contract_info} {reliability_info} {status_str}{gpu_status}«{listed_min_gpu_count} {running_info}\n"
 
             old_data = self.previous_status.get(server_id)
             if old_data is not None:
