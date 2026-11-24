@@ -275,7 +275,8 @@ class VastAIBot:
                 listed_inet_up_cost = server.get("listed_inet_up_cost", 0) or 0.0
                 listed_volume_cost = server.get("listed_volume_cost", 0) or 0.0
                 # price_info = f"💵{listed_gpu_cost:.2f}/{min_bid_price:.2f} {listed_storage_cost:.2f}/{listed_volume_cost:.2f}"
-                price_info = f"💵{listed_gpu_cost:.2f} {listed_storage_cost:.2f}"
+                # price_info = f"💵{listed_gpu_cost:.2f} {listed_storage_cost:.2f}"
+                price_info = f"💵{listed_gpu_cost:.2f}"
             else:
                 rented_gpus = running
                 price_info = "❌ NotList ❌"
